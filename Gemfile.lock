@@ -1,9 +1,21 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    aws-eventstream (1.0.1)
+    aws-partitions (1.100.0)
+    aws-sdk-core (3.24.1)
+      aws-eventstream (~> 1.0)
+      aws-partitions (~> 1.0)
+      aws-sigv4 (~> 1.0)
+      jmespath (~> 1.0)
+    aws-sdk-secretsmanager (1.11.0)
+      aws-sdk-core (~> 3)
+      aws-sigv4 (~> 1.0)
+    aws-sigv4 (1.0.3)
     diff-lcs (1.3)
     hiera (1.3.4)
       json_pure
+    jmespath (1.4.0)
     json_pure (2.1.0)
     metaclass (0.0.4)
     mocha (1.7.0)
@@ -27,6 +39,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  aws-sdk-secretsmanager
   hiera (= 1.3.4)
   mocha
   rake
