@@ -1,9 +1,11 @@
 # Hiera AWS Secrets Manager Backend
 
+[![Build Status](https://travis-ci.org/unruly/hiera-secrets-manager.svg?branch=master)](https://travis-ci.org/unruly/hiera-secrets-manager)
+
 ## Installation
 To get the repository on your system:
 ```bash
-git clone git@github.com:unruly/hiera-secrets-manager-backend
+git clone git@github.com:unruly/hiera-secrets-manager
 ```
 
 #### File Location
