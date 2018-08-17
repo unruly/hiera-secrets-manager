@@ -21,7 +21,7 @@ Once this is developed, this needs to be properly implemented, but rough steps:
   - sm
   - yaml
 ```
-The "`sm`" backend (which refers to the Secrets Manager `sm_backend.rb`) is priorpitised over the "`yaml`" backend. If a credential is not found on the AWS Secrets Manager, it will proceed to look for it in the yaml files setup.
+The "`sm`" backend (which refers to the Secrets Manager `sm_backend.rb`) is prioritised over the "`yaml`" backend. If a credential is not found on the AWS Secrets Manager, it will proceed to look for it in the yaml files setup.
 
 #### Credentials
 The system running this setup will need to have their AWS credentials properly set up, conventionally in a file located at `~/.aws/credentials`. If not already set up, you can obtain your access credentials in AWS, and run `aws configure` to add them to your system.

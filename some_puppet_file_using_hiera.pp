@@ -1,1 +1,0 @@
-notice(hiera('some_credentials_in_secrets_manager'))

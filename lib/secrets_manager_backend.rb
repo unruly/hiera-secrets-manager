@@ -1,13 +1,13 @@
 class Hiera
   module Backend
-    class Sm_backend
-      def initialize(cache=nil)
+    class Secrets_manager_backend
+      def initialize()
         require 'aws-sdk-secretsmanager'
 
         # Initialises a new instance of the AWS Secrets Manager client
-        @client = Aws::SecretsManager::Client.new(region:'eu-west-1')
+        @client = Aws::SecretsManager::Client.new(region: Config[:secrets_manager][:region])
 
-        Hiera.debug("AWS Secrets Manager Hiera backend starting")
+        Hiera.debug("AWS Secrets Manager backend starting")
       end
 
       # lookup() is called by Hiera to return a secret, and is required by Hiera to work

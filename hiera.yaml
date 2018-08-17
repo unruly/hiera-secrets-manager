@@ -1,8 +1,0 @@
----
-:backends:
-  - sm
-  - yaml
-:yaml:
-  :datadir: /path/to/folder/containing/hiera/yaml/files
-:hierarchy:
-  - "name_of_some_yaml_file"
