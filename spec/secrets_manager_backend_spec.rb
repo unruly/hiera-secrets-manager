@@ -27,17 +27,34 @@ class Hiera
 
       describe '#lookup' do
         before do
-          @secret_name = "secret_name"
-          @secret_string = "i_am_a_secret"
           @mock_client = mock('client')
-          @mock_client.stubs(:get_secret_value).with({ secret_id: @secret_name }).returns('secret_string' => @secret_string)
           Aws::SecretsManager::Client.stubs(:new).with(@config_object[:secrets_manager]).returns(@mock_client)
           @backend = Secrets_manager_backend.new
         end
 
         it "should return a secret that exists" do
+          @secret_name = "secret_name"
+          @secret_string = "i_am_a_secret"
+
+          @mock_client.stubs(:get_secret_value)
+              .with({ secret_id: @secret_name })
+              .returns('secret_string' => @secret_string)
+
           answer = @backend.lookup(@secret_name, nil, nil, nil)
           expect(answer).to eq(@secret_string)
+        end
+
+        it "should not return a secret that does not exist" do
+          @nonexistent_secret = "does_not_exist"
+          @mock_context = {}
+          @error_message = 'Secrets Manager could not find this secret.'
+          @mock_client.stubs(:get_secret_value)
+              .with({ secret_id: @nonexistent_secret })
+              .raises(Aws::SecretsManager::Errors::ResourceNotFoundException.new(@mock_context, @error_message))
+
+          Hiera.expects(:debug).with("#{@nonexistent_secret} not found: #{@error_message}")
+          answer = @backend.lookup(@nonexistent_secret, nil, nil, nil)
+          expect(answer).to eq(nil)
         end
       end
     end
