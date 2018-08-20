@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'hiera', '1.3.4'
 gem 'aws-sdk-secretsmanager'
+gem 'hiera', '1.3.4'
 
 group :test, :development do
   gem 'mocha'
