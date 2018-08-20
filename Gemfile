@@ -1,7 +1,11 @@
 source 'https://rubygems.org'
 
-gem 'rspec'
 gem 'hiera', '1.3.4'
-gem 'mocha'
-gem 'rake'
 gem 'aws-sdk-secretsmanager'
+
+group :test, :development do
+  gem 'mocha'
+  gem 'rake'
+  gem 'rspec'
+  gem 'rubocop'
+end
