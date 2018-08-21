@@ -1,6 +1,7 @@
 # Hiera AWS Secrets Manager Backend
 
 [![Build Status](https://travis-ci.org/unruly/hiera-secrets-manager.svg?branch=master)](https://travis-ci.org/unruly/hiera-secrets-manager)
+[![Gem Version](https://badge.fury.io/rb/hiera-secrets-manager.svg)](https://badge.fury.io/rb/hiera-secrets-manager)
 
 ## Installation
 To get the repository on your system:
