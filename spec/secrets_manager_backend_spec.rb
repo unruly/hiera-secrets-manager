@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'secrets_manager_backend'
+require 'hiera/backend/secrets_manager_backend'
 
 class Hiera
   module Backend

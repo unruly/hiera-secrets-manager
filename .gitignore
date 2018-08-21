@@ -1,3 +1,4 @@
 .idea
 coverage
 stale_outputs_checked
+.rubocop*

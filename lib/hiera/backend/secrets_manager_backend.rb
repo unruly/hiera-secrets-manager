@@ -24,15 +24,20 @@ class Hiera
         answer
       end
 
+      private
+
+      def get_prefix(environments, scope)
+        if environments && environments.key?(scope['environment'])
+          environments[scope['environment']]
+        else
+          scope['environment']
+        end
+      end
+
       def format_key(key, scope, config)
         if scope.key?('environment')
           environments = config[:environments]
-          environment = scope['environment']
-          if environments && environments.key?(environment)
-            prefix = environments[environment]
-          else
-            prefix = environment
-          end
+          prefix = get_prefix(environments, scope)
           "#{prefix}/#{key}"
         else
           key
