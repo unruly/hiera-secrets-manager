@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'aws-sdk-secretsmanager'
+gem 'aws-sdk-secretsmanager', '1.11.0'
 gem 'hiera', '1.3.4'
 
 group :test, :development do
