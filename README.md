@@ -58,5 +58,19 @@ hiera <CREDENTIAL_IN_HIERA> --config hiera.yaml --debug
 #<YOUR_PASSWORD>
 ```
 
-#### Integrate into your own Puppet projects
-TBC
+#### Verifying programmatically
+
+```ruby
+require 'hiera'
+require 'hiera/backend/secrets_manager_backend'
+
+Hiera::Config.load({ :secrets_manager => { :region => 'eu-west-1' }})
+
+backend = Hiera::Backend::Secrets_manager_backend.new()
+
+backend.lookup('my-environment/some-key', { }, nil, nil)
+ # => "some-secret"
+backend.lookup('some-key', { 'environment' => 'my-environment' }, nil, nil)
+ # => "some-secret"
+```
+
