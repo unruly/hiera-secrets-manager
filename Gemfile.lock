@@ -69,7 +69,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  aws-sdk-secretsmanager
+  aws-sdk-secretsmanager (= 1.11.0)
   hiera (= 1.3.4)
   mocha
   rake
