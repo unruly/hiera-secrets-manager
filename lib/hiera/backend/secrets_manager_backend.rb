@@ -13,6 +13,11 @@ class Hiera
       def lookup(key, scope, order_override, resolution_type)
         answer = nil
 
+        if contains_illegal_characters?(key)
+          Hiera.debug("#{key} contains illegal characters. Skipping lookup.")
+          return answer
+        end
+
         key_to_query = format_key(key, scope, Config[:secrets_manager])
 
         begin
@@ -25,6 +30,12 @@ class Hiera
       end
 
       private
+
+      # AWS Secrets Manager only allows alphanumeric characters or (/_+=.@-) in key names
+      # GetSecret requests will fail for keys which have illegal characters
+      def contains_illegal_characters?(key)
+        /^[a-zA-Z0-9\/_+=.@\-]+$/.match(key).nil?
+      end
 
       def get_prefix(environments, scope)
         if environments && environments.key?(scope['environment'])

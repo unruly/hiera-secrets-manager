@@ -128,7 +128,24 @@ class Hiera
             .expects(:get_secret_value)
             .with(secret_id: secret_name)
             .returns('secret_string' => 'the_secret')
-          @backend.lookup('secret_name', scope, nil, nil)
+
+          @backend.lookup(secret_name, scope, nil, nil)
+        end
+
+        %w(: ~ # \\).each do |character|
+          it "returns nil if key has illegal character [#{character}] (according to AWS)" do
+            @mock_client
+                .expects(:get_secret_value)
+                .never
+
+            secret_name = "secret#{character}name"
+
+            Hiera
+                .expects(:debug)
+                .with("#{secret_name} contains illegal characters. Skipping lookup.")
+
+            @backend.lookup(secret_name, @scope, nil, nil)
+          end
         end
       end
     end
