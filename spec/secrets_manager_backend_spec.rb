@@ -23,6 +23,13 @@ class Hiera
           .with(@region_object)
       end
 
+      def mock_scope_with_environment(environment)
+        mock_scope = mock
+        mock_scope.stubs(:lookupvar).with('environment').returns(environment)
+
+        Hiera::Scope.new(mock_scope)
+      end
+
       describe '#initialize' do
         it 'should announce its creation' do
           Hiera
@@ -46,7 +53,8 @@ class Hiera
             .stubs(:new)
             .with(@region_object).returns(@mock_client)
           @backend = Secrets_manager_backend.new
-          @scope = { 'environment' => 'env1' }
+
+          @scope = mock_scope_with_environment('env1')
         end
 
         it 'should return a secret that exists' do
@@ -85,7 +93,8 @@ class Hiera
         end
 
         it 'falls back to provided scope environment when Hiera config does not include environment as a key / value pair' do
-          scope = { 'environment' => 'some_env_not_in_config' }
+          scope = mock_scope_with_environment('some_env_not_in_config')
+
           prefixed_secret_name = 'some_env_not_in_config/secret_name'
 
           @mock_client
@@ -99,7 +108,8 @@ class Hiera
           incomplete_config = { secrets_manager: { region: @region_object[:region] } }
           Config.load(incomplete_config)
 
-          scope = { 'environment' => 'some_env' }
+          scope = mock_scope_with_environment('some_env')
+
           prefixed_secret_name = 'some_env/secret_name'
 
           @mock_client
@@ -110,7 +120,8 @@ class Hiera
         end
 
         it 'does not use prefix if no environment is provided in scope' do
-          scope = { 'no_environment_key' => 'some_value' }
+          scope = mock_scope_with_environment(nil)
+
           secret_name = 'secret_name'
 
           @mock_client

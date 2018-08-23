@@ -7,6 +7,7 @@ require 'rspec'
 require 'mocha'
 require 'hiera'
 require 'aws-sdk-secretsmanager'
+require 'hiera/scope'
 
 SimpleCov.formatter = SimpleCov::Formatter::Console
 SimpleCov.start

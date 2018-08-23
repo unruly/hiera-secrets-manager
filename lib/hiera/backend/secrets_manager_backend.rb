@@ -35,7 +35,7 @@ class Hiera
       end
 
       def format_key(key, scope, config)
-        if scope.key?('environment')
+        if scope.include?('environment') and scope['environment']
           environments = config[:environments]
           prefix = get_prefix(environments, scope)
           "#{prefix}/#{key}"
