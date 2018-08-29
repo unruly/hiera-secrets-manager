@@ -139,6 +139,22 @@ class Hiera
           expect(answer).to eq(nil)
         end
 
+        it 'should handle exceptions gracefully' do
+          error_message = 'some_error'
+          secret_name = 'some_secret'
+          error = StandardError.new(
+              error_message
+          )
+          @mock_client.stubs(:get_secret_value)
+              .with(secret_id: secret_name)
+              .raises(error)
+          Hiera
+              .expects(:debug)
+              .with("AWS Secrets Manager Error: #{error_message}")
+          answer = @backend.lookup(secret_name, {}, nil, nil)
+          expect(answer).to eq(nil)
+        end
+
         it 'falls back to provided scope environment when Hiera config does not include environment as a key / value pair' do
           scope = mock_scope_with_environment('some_env_not_in_config')
 
