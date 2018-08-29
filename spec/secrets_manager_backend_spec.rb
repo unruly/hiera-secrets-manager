@@ -60,20 +60,12 @@ class Hiera
             Secrets_manager_backend.new
           end
 
-          it 'it announces it has started in a bad state' do
-            config_object = {}
-            Config.load(config_object)
-            Hiera
-              .expects(:debug)
-              .with('AWS Secrets Manager backend has started in a bad state.')
-          end
-
           it 'with empty config, should announce that it has no config' do
             config_object = {}
             Config.load(config_object)
             Hiera
               .expects(:debug)
-              .with('Warning! Config is empty.')
+              .with('Warning! Config is empty. Starting in a bad state.')
           end
 
           it 'with no params, should announce that it is in a bad state' do
@@ -81,7 +73,7 @@ class Hiera
             Config.load(config_object)
             Hiera
               .expects(:debug)
-              .with('Warning! Missing key(s) [:region, :access_key_id, :secret_access_key] in Config.')
+              .with('Warning! Missing key(s) [:region, :access_key_id, :secret_access_key] in Config. Starting in a bad state.')
           end
 
           [:region, :access_key_id, :secret_access_key].each do |key|
@@ -90,7 +82,7 @@ class Hiera
               Config.load(@config_object)
               Hiera
                 .expects(:debug)
-                .with("Warning! Missing key(s) [:#{key}] in Config.")
+                .with("Warning! Missing key(s) [:#{key}] in Config. Starting in a bad state.")
             end
           end
         end

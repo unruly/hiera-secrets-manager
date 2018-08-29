@@ -58,32 +58,30 @@ class Hiera
       end
 
       def create_client
-        if valid_params?
-          Hiera.debug('AWS Secrets Manager backend starting')
-          client = Aws::SecretsManager::Client.new(
-            region: @config[:secrets_manager][:region],
-            access_key_id: @config[:secrets_manager][:access_key_id],
-            secret_access_key: @config[:secrets_manager][:secret_access_key]
-          )
-        else
-          Hiera.debug('AWS Secrets Manager backend has started in a bad state.')
-          client = nil
+        if missing_config?
+          Hiera.debug('Warning! Config is empty. Starting in a bad state.')
+          return nil
         end
-        client
+
+        if missing_keys?
+          Hiera.debug("Warning! Missing key(s) #{missing_keys} in Config. Starting in a bad state.")
+          return nil
+        end
+
+        Hiera.debug('AWS Secrets Manager backend starting')
+        Aws::SecretsManager::Client.new(
+          region: @config[:secrets_manager][:region],
+          access_key_id: @config[:secrets_manager][:access_key_id],
+          secret_access_key: @config[:secrets_manager][:secret_access_key]
+        )
       end
 
-      def valid_params?
+      def missing_config?
+        @config[:secrets_manager].nil?
+      end
 
-        if @config[:secrets_manager].nil?
-          Hiera.debug('Warning! Config is empty.')
-          return false
-        end
-
-        unless missing_keys.empty?
-          Hiera.debug("Warning! Missing key(s) #{missing_keys} in Config.")
-          return false
-        end
-        true
+      def missing_keys?
+        !missing_keys.empty?
       end
 
       def missing_keys
