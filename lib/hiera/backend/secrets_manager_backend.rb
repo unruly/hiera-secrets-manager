@@ -87,7 +87,7 @@ class Hiera
       end
 
       def missing_keys
-        %i[region access_key_id secret_access_key].reject do |key|
+        [:region, :access_key_id, :secret_access_key].reject do |key|
           @config[:secrets_manager].include?(key)
         end
       end
