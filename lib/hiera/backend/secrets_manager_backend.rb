@@ -3,15 +3,17 @@ class Hiera
     class Secrets_manager_backend
       def initialize
         require 'aws-sdk-secretsmanager'
-        @client = Aws::SecretsManager::Client.new(
-          region: Config[:secrets_manager][:region]
-        )
-
-        Hiera.debug('AWS Secrets Manager backend starting')
+        @config = Config
+        @client = create_client
       end
 
       def lookup(key, scope, order_override, resolution_type)
         answer = nil
+
+        if @client.nil?
+          Hiera.debug('Key lookup failed. AWS Secrets Manager backend is in a bad state.')
+          return answer
+        end
 
         if contains_illegal_characters?(key)
           Hiera.debug("#{key} contains illegal characters. Skipping lookup.")
@@ -34,7 +36,7 @@ class Hiera
       # AWS Secrets Manager only allows alphanumeric characters or (/_+=.@-) in key names
       # GetSecret requests will fail for keys which have illegal characters
       def contains_illegal_characters?(key)
-        /^[a-zA-Z0-9\/_+=.@\-]+$/.match(key).nil?
+        %r{^[a-zA-Z0-9\/_+=.@\-]+$}.match(key).nil?
       end
 
       def get_prefix(environments, scope)
@@ -46,12 +48,47 @@ class Hiera
       end
 
       def format_key(key, scope, config)
-        if scope.include?('environment') and scope['environment']
+        if scope.include?('environment') && scope['environment']
           environments = config[:environments]
           prefix = get_prefix(environments, scope)
           "#{prefix}/#{key}"
         else
           key
+        end
+      end
+
+      def create_client
+        if valid_params?
+          Hiera.debug('AWS Secrets Manager backend starting')
+          client = Aws::SecretsManager::Client.new(
+            region: @config[:secrets_manager][:region],
+            access_key_id: @config[:secrets_manager][:access_key_id],
+            secret_access_key: @config[:secrets_manager][:secret_access_key]
+          )
+        else
+          Hiera.debug('AWS Secrets Manager backend has started in a bad state.')
+          client = nil
+        end
+        client
+      end
+
+      def valid_params?
+
+        if @config[:secrets_manager].nil?
+          Hiera.debug('Warning! Config is empty.')
+          return false
+        end
+
+        unless missing_keys.empty?
+          Hiera.debug("Warning! Missing key(s) #{missing_keys} in Config.")
+          return false
+        end
+        true
+      end
+
+      def missing_keys
+        %i[region access_key_id secret_access_key].reject do |key|
+          @config[:secrets_manager].include?(key)
         end
       end
     end

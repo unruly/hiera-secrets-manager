@@ -4,29 +4,37 @@ require 'hiera/backend/secrets_manager_backend'
 class Hiera
   module Backend
     describe Secrets_manager_backend do
-      before do
+      before(:each) do
         @region_object = { region: 'some_region' }
+        @credentials = { access_key_id: 'some_id',
+                         secret_access_key: 'some_access_key' }
         @config_object = { secrets_manager:
-                               {
-                                 region: @region_object[:region],
-                                 environments:
-                                       {
-                                         'env1' => 'production',
-                                         'env2' => 'staging',
-                                         'env3' => 'development'
-                                       }
-                               } }
+                             {
+                               region: @region_object[:region],
+                               access_key_id: @credentials[:access_key_id],
+                               secret_access_key: @credentials[:secret_access_key],
+                               environments:
+                                     {
+                                       'env1' => 'production',
+                                       'env2' => 'staging',
+                                       'env3' => 'development'
+                                     }
+                             } }
+
         Config.load(@config_object)
         Hiera.stubs(:debug)
+        @mock_client = mock('client')
         Aws::SecretsManager::Client
           .stubs(:new)
-          .with(@region_object)
+          .with(region: @region_object[:region],
+                access_key_id: @credentials[:access_key_id],
+                secret_access_key: @credentials[:secret_access_key])
+          .returns(@mock_client)
       end
 
       def mock_scope_with_environment(environment)
         mock_scope = mock
         mock_scope.stubs(:lookupvar).with('environment').returns(environment)
-
         Hiera::Scope.new(mock_scope)
       end
 
@@ -41,20 +49,67 @@ class Hiera
         it 'should set up a connection to AWS Secrets Manager' do
           Aws::SecretsManager::Client
             .expects(:new)
-            .with(@region_object)
+            .with(region: @region_object[:region],
+                  access_key_id: @credentials[:access_key_id],
+                  secret_access_key: @credentials[:secret_access_key])
           Secrets_manager_backend.new
+        end
+
+        context 'with bad config' do
+          after do
+            Secrets_manager_backend.new
+          end
+
+          it 'it announces it has started in a bad state' do
+            config_object = {}
+            Config.load(config_object)
+            Hiera
+              .expects(:debug)
+              .with('AWS Secrets Manager backend has started in a bad state.')
+          end
+
+          it 'with empty config, should announce that it has no config' do
+            config_object = {}
+            Config.load(config_object)
+            Hiera
+              .expects(:debug)
+              .with('Warning! Config is empty.')
+          end
+
+          it 'with no params, should announce that it is in a bad state' do
+            config_object = { secrets_manager: {} }
+            Config.load(config_object)
+            Hiera
+              .expects(:debug)
+              .with('Warning! Missing key(s) [:region, :access_key_id, :secret_access_key] in Config.')
+          end
+
+          [:region, :access_key_id, :secret_access_key].each do |key|
+            it "debug should announce when key [#{key}] is missing in config" do
+              @config_object[:secrets_manager].delete(key)
+              Config.load(@config_object)
+              Hiera
+                .expects(:debug)
+                .with("Warning! Missing key(s) [:#{key}] in Config.")
+            end
+          end
         end
       end
 
       describe '#lookup' do
         before do
-          @mock_client = mock('client')
-          Aws::SecretsManager::Client
-            .stubs(:new)
-            .with(@region_object).returns(@mock_client)
           @backend = Secrets_manager_backend.new
-
           @scope = mock_scope_with_environment('env1')
+        end
+
+        it 'should announce if it is in a bad state' do
+          config_object = { secrets_manager: {} }
+          Config.load(config_object)
+          Hiera
+            .expects(:debug)
+            .with('Key lookup failed. AWS Secrets Manager backend is in a bad state.')
+          backend = Secrets_manager_backend.new
+          backend.lookup('some_secret', {}, nil, nil)
         end
 
         it 'should return a secret that exists' do
@@ -132,17 +187,17 @@ class Hiera
           @backend.lookup(secret_name, scope, nil, nil)
         end
 
-        %w(: ~ # \\).each do |character|
+        %w[: ~ # \\].each do |character|
           it "returns nil if key has illegal character [#{character}] (according to AWS)" do
             @mock_client
-                .expects(:get_secret_value)
-                .never
+              .expects(:get_secret_value)
+              .never
 
             secret_name = "secret#{character}name"
 
             Hiera
-                .expects(:debug)
-                .with("#{secret_name} contains illegal characters. Skipping lookup.")
+              .expects(:debug)
+              .with("#{secret_name} contains illegal characters. Skipping lookup.")
 
             @backend.lookup(secret_name, @scope, nil, nil)
           end

@@ -5,10 +5,10 @@ gem 'hiera', '1.3.4'
 
 group :test, :development do
   gem 'mocha'
+  gem 'puppet'
   gem 'rake'
   gem 'rspec'
   gem 'rubocop'
   gem 'simplecov'
   gem 'simplecov-console'
-  gem 'puppet'
 end
