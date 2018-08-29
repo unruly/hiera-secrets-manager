@@ -26,6 +26,8 @@ class Hiera
           answer = @client.get_secret_value(secret_id: key_to_query)['secret_string']
         rescue Aws::SecretsManager::Errors::ResourceNotFoundException => error
           Hiera.debug("#{key} not found: #{error.message}")
+        rescue StandardError => error
+          Hiera.debug("AWS Secrets Manager Error: #{error}")
         end
 
         answer
