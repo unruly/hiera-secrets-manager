@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name        = 'hiera-secrets-manager'
-  spec.version     = '0.1.5'
+  spec.version     = '1.0.0'
 
   spec.authors     = ['Unruly']
   spec.email       = 'boss@unrulygroup.com'
