@@ -117,6 +117,16 @@ class Hiera
           expect(answer).to eq(secret_string)
         end
 
+        it 'should log the secret version for successful lookup' do
+          @mock_client.stubs(:get_secret_value)
+                      .returns('version_id'    => 'secret_version_UUID',
+                               'secret_string' => 'i_am_a_secret')
+          Hiera
+              .expects(:debug)
+              .with("Retrieved Secret 'some_secret' with version 'secret_version_UUID'")
+          @backend.lookup('some_secret', @scope, nil, nil)
+        end
+
         it 'should not return a secret that does not exist' do
           nonexistent_secret = 'does_not_exist'
           prefixed_nonexistent_secret = 'production/does_not_exist'

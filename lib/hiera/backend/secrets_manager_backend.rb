@@ -23,7 +23,9 @@ class Hiera
         key_to_query = format_key(key, scope, Config[:secrets_manager])
 
         begin
-          answer = @client.get_secret_value(secret_id: key_to_query)['secret_string']
+          response = @client.get_secret_value(secret_id: key_to_query)
+          answer = response['secret_string']
+          Hiera.debug("Retrieved Secret '#{key}' with version '#{response['version_id']}'")
         rescue Aws::SecretsManager::Errors::ResourceNotFoundException => error
           Hiera.debug("#{key} not found: #{error.message}")
         rescue StandardError => error
