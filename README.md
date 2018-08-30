@@ -1,77 +1,132 @@
-# Hiera AWS Secrets Manager Backend
+# Hiera AWS Secrets Manager Backend :key:
 
 [![Build Status](https://travis-ci.org/unruly/hiera-secrets-manager.svg?branch=master)](https://travis-ci.org/unruly/hiera-secrets-manager)
 [![Gem Version](https://badge.fury.io/rb/hiera-secrets-manager.svg)](https://badge.fury.io/rb/hiera-secrets-manager)
 
-## Installation
-To get the repository on your system:
+A hiera backend to query AWS Secrets Manager which uses Puppet Environments for namespacing.
+
 ```bash
-git clone git@github.com:unruly/hiera-secrets-manager
+$ hiera 'my_system/password' \
+    environment=prod \
+    --config ~/hiera.yaml \
+    --debug
+
+DEBUG: 2018-08-30 16:54:00 +0000: AWS Secrets Manager backend starting
+DEBUG: 2018-08-30 16:54:00 +0000: Retrieved Secret 'production/my_system/password' with version '2d06f591-ef4c-4e4e-8c6c-5e3668db9180'
+
+mYs3cR3TpAs5W0rD
 ```
 
-#### File Location
+## Contents
 
-Once this is developed, this needs to be properly implemented, but rough steps: 
+- [Install](#install)
+- [Configuration](#configuration)
+  - [Region](#region)
+  - [Credentials](#credentials)
+  - [Environments](#environments)
+- [Contributing](#contributing)
+  - [Code of Conduct](#code-of-conduct)
+  - [Getting Started](#getting-started)
+  - [Building](#building)
+  - [Releasing a Change](#releasing-a-change)
+- [License](#license)
 
-- Move `secrets_manager_backend.rb` to where Hiera stores its backend files
-    - Using the mlocate CLI tool, you can run `locate yaml_backend.rb` to find where the default YAML backend file lives, which should inform your decision.
+## Install
 
-#### Credentials
-The system running this setup will need to have their AWS credentials properly set up, conventionally in a file located at `~/.aws/credentials`. If not already set up, you can obtain your access credentials in AWS, and run `aws configure` to add them to your system.
+To install the gem manually:
 
-More information can be found [here.](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html)
-
-
-## Usage
-
-#### With `puppet apply`:
-
-Once your project has correctly set the backend up, you can use the Puppet CLI tools to check your connection.
-<br/>
-- First, create a local Puppet file (e.g. `some_puppet_file_using_hiera.pp`).
-- In the Puppet file, use the `hiera()` function to ask Hiera to fetch a credential in your AWS Secrets Manager. For example:
-```puppet
-notice(hiera('the_name_of_some_credential_in_secrets_manager'))
+```bash
+gem install hiera-secrets-manager
 ```
-- Create a `hiera.yaml` Hiera config file, and tell it to use the Secrets Manager backend:
+
+Install the dependencies before attempting to use the gem:
+
+```
+bundle install
+```
+
+## Configuration
+
+Hiera Secrets Manager is configurable and the configuration has three required fields to operate: region, access_key_id, and secret_access_key.
+
+An example hiera.yaml file implementing only hiera-secrets-manager is below:
+
 ```yaml
 :backends:
   - secrets_manager
+:secrets_manager:
+    :region: eu-west-1
+    :access_key_id: AWSACCESSKEY
+    :secret_access_key: rAnd0MsTr!nG
+    :environments:
+        dev: development
+        uat: staging
+        prod: production
 ```
-- Then, run `puppet apply` using the `--hiera_config` flag to point to the Hiera config file:
- ```bash
- puppet apply --hiera_config=/path/to/hiera.yaml /path/to/some_puppet_file_using_hiera.pp
-# Notice: Scope(Class[main]): <YOUR_PASSWORD>
-# Notice: Compiled catalog for <YOUR_SYSTEM> in environment <ENV> in 0.40 seconds
-# Notice: Finished catalog run in 0.02 seconds
- ```
- 
-#### With `hiera` CLI:
-This gives a faster feedback loop as to whether the hiera setup on your system is working.
 
-- Follow the same steps as above to create a `hiera.yaml` file pointing to the Secrets Manager backend.
-- Use the Hiera CLI tool to query the Secrets Manager backend, using the aforementioned config file, optionally using the debug flag:
-    - The config flag tells Hiera to use the Secrets Manager backend, and the debug flag will show you that it's working.
+### Region
+
+Mandatory field. Corresponds to AWS Region where your secrets are stored e.g. `eu-west-1`
+
+### Credentials
+
+Credentials for the AWS user are mandatory. The user must have permission to use `secretsmanager:GetSecretValue` on any relevant secrets in AWS Secrets Manager. This permission can be configured in AWS IAM.
+
+#### access_key_id
+
+Mandatory field. Corresponds to AWS's `Access key ID`.
+
+#### secret_access_key
+
+Mandatory field. Corresponds to AWS's `Secret access key`.
+
+### Environments
+
+Optional field. When used with Puppet, an environment will always be present. These key value pairs map the environments in Puppet to namespaces in AWS.
+
+```yaml
+:environments:
+    dev: development
+    uat: staging
+    prod: production
+```
+
+- A lookup for key `foo` in environment `dev` will query AWS Secrets Manager for `development/foo`
+
+If there is no key set for an environment, or no environments configuration at all, the secret name that will be queried in AWS Secrets Manager will by default  be prefixed with the Puppet environment name:
+
+- A lookup for key `zap` in environment `test` will query AWS Secrets Manager for `test/zap`, because there's no entry for `test` in the environments configuration.
+
+## Contributing
+
+### Code of Conduct
+
+Everyone interacting with this project is required to follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
+### Getting Started
+
+You'll need Git, Ruby, and Bundler installed. 
+Then clone this project, and install its dependencies:
+
 ```bash
-cd hiera-secrets-manager-backend
-hiera <CREDENTIAL_IN_HIERA> --config hiera.yaml --debug
-#DEBUG: 2018-08-15 15:52:34 +0000: AWS Secrets Manager Hiera backend starting
-#<YOUR_PASSWORD>
+$ git clone git@github.com:unruly/hiera-secrets-manager
+$ bundle install
 ```
 
-#### Verifying programmatically
+You can run `rake` in the project root to run RSpec tests, and check test coverage.
 
-```ruby
-require 'hiera'
-require 'hiera/backend/secrets_manager_backend'
+### Building
 
-Hiera::Config.load({ :secrets_manager => { :region => 'eu-west-1' }})
+- To build a gem on your local machine, run `gem build hiera-secrets-manager.gemspec`, which will create a .gem file with the current version number.
+- Install the gem with `gem install hiera-secrets-manager-{VERSION}.gem`, specifying the version number.
 
-backend = Hiera::Backend::Secrets_manager_backend.new()
+### Releasing a Change
 
-backend.lookup('my-environment/some-key', { }, nil, nil)
- # => "some-secret"
-backend.lookup('some-key', { 'environment' => 'my-environment' }, nil, nil)
- # => "some-secret"
-```
+- To release a new version:
+  - Update the version number in `hiera-secrets-manager.gemspec`
+  - Ensure versions are in line with the [Semantic Versioning](https://semver.org/) convention.
+  - Open a pull request against this repository.
 
+## License
+
+The gem is available as open source under the terms of the [MIT License](./LICENSE.md).
