@@ -123,7 +123,7 @@ class Hiera
                                'secret_string' => 'i_am_a_secret')
           Hiera
               .expects(:debug)
-              .with("Retrieved Secret 'some_secret' with version 'secret_version_UUID'")
+              .with("Retrieved Secret 'production/some_secret' with version 'secret_version_UUID'")
           @backend.lookup('some_secret', @scope, nil, nil)
         end
 
@@ -144,7 +144,7 @@ class Hiera
                       .raises(error)
           Hiera
             .expects(:debug)
-            .with("#{nonexistent_secret} not found: #{error_message}")
+            .with("#{prefixed_nonexistent_secret} not found: #{error_message}")
           answer = @backend.lookup(nonexistent_secret, @scope, nil, nil)
           expect(answer).to eq(nil)
         end
