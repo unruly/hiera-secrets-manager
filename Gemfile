@@ -8,7 +8,6 @@ group :test, :development do
   gem 'puppet'
   gem 'rake'
   gem 'rspec'
-  gem 'rubocop'
   gem 'simplecov'
   gem 'simplecov-console'
 end

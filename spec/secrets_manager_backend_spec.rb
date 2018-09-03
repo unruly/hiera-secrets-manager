@@ -160,7 +160,8 @@ class Hiera
               .raises(error)
           Hiera
               .expects(:debug)
-              .with("AWS Secrets Manager Error: #{error_message}")
+              .with("Secrets Manager Backend Error:")
+              .with(error)
           answer = @backend.lookup(secret_name, {}, nil, nil)
           expect(answer).to eq(nil)
         end
@@ -205,19 +206,62 @@ class Hiera
           @backend.lookup(secret_name, scope, nil, nil)
         end
 
-        %w[: ~ # \\].each do |character|
-          it "returns nil if key has illegal character [#{character}] (according to AWS)" do
+        context 'with illegal characters' do
+          %w[: ~ # \\].each do |character|
+            it "returns nil if key has illegal character [#{character}] (according to AWS)" do
+              @mock_client
+                  .expects(:get_secret_value)
+                  .never
+
+              secret_name = "secret#{character}name"
+
+              Hiera
+                  .expects(:debug)
+                  .with("#{secret_name} contains illegal characters. Skipping lookup.")
+
+              @backend.lookup(secret_name, @scope, nil, nil)
+            end
+          end
+        end
+
+        context 'resolution type' do
+          it 'does not support arrays' do
             @mock_client
-              .expects(:get_secret_value)
-              .never
-
-            secret_name = "secret#{character}name"
-
+                .expects(:get_secret_value)
+                .never
             Hiera
-              .expects(:debug)
-              .with("#{secret_name} contains illegal characters. Skipping lookup.")
+                .expects(:warn)
+                .with("Hiera Secrets Manager backend does not support arrays.")
+            answer = @backend.lookup('some_secret', {}, nil, :array)
+            expect(answer).to eq(nil)
+          end
 
-            @backend.lookup(secret_name, @scope, nil, nil)
+          it 'parses hashes successfully' do
+            secret_name = 'some_secret'
+            @mock_client
+                .expects(:get_secret_value)
+                .with(secret_id: secret_name)
+                .returns('secret_string' => '{"foo": "bar"}')
+            answer = @backend.lookup(secret_name, {}, nil, :hash)
+            expect(answer).to eq({ 'foo' => 'bar' })
+          end
+
+          it 'should announce if expecting hash and receiving string' do
+            secret_name = 'some_secret'
+            error = JSON::ParserError.new('unexpected token')
+            @mock_client
+                .expects(:get_secret_value)
+                .with(secret_id: secret_name)
+                .returns('secret_string' => 'some string')
+            JSON
+                .stubs(:parse)
+                .raises(error)
+            Hiera
+                .expects(:debug)
+                .with("Secrets Manager Backend Error:")
+                .with(error)
+            answer = @backend.lookup(secret_name, {}, nil, :hash)
+            expect(answer).to eq(nil)
           end
         end
       end

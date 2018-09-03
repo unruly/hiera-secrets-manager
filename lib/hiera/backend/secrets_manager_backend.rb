@@ -2,6 +2,7 @@ class Hiera
   module Backend
     class Secrets_manager_backend
       def initialize
+        require 'json'
         require 'aws-sdk-secretsmanager'
         @config = Config
         @client = create_client
@@ -23,13 +24,19 @@ class Hiera
         key_to_query = format_key(key, scope, Config[:secrets_manager])
 
         begin
-          response = @client.get_secret_value(secret_id: key_to_query)
-          answer = response['secret_string']
-          Hiera.debug("Retrieved Secret '#{key_to_query}' with version '#{response['version_id']}'")
+          case resolution_type
+          when :array
+            Hiera.warn("Hiera Secrets Manager backend does not support arrays.")
+          when :hash
+            answer = JSON.parse(retrieve_secret(key_to_query))
+          else
+            answer = retrieve_secret(key_to_query)
+          end
         rescue Aws::SecretsManager::Errors::ResourceNotFoundException => error
           Hiera.debug("#{key_to_query} not found: #{error.message}")
         rescue StandardError => error
-          Hiera.debug("AWS Secrets Manager Error: #{error}")
+          Hiera.debug("Secrets Manager Backend Error:")
+          Hiera.debug(error)
         end
 
         answer
@@ -92,6 +99,12 @@ class Hiera
         [:region, :access_key_id, :secret_access_key].reject do |key|
           @config[:secrets_manager].include?(key)
         end
+      end
+
+      def retrieve_secret(key)
+        response = @client.get_secret_value(secret_id: key)
+        Hiera.debug("Retrieved Secret '#{key}' with version '#{response['version_id']}'")
+        response['secret_string']
       end
     end
   end
