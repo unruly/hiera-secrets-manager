@@ -20,6 +20,7 @@ mYs3cR3TpAs5W0rD
 ## Contents
 
 - [Install](#install)
+- [Supported Lookups](#supported-lookups)
 - [Configuration](#configuration)
   - [Region](#region)
   - [Credentials](#credentials)
@@ -43,6 +44,31 @@ Install the dependencies before attempting to use the gem:
 
 ```
 bundle install
+```
+
+## Supported Lookups
+
+hiera-secrets-manager supports `:priority` (single value) and `:hash` (key-value pair) lookups, but not `:array`.
+
+### Priority Lookup
+
+```puppet
+# In environment 'production' with 'production/system/my-secret' set as 'some-password'
+$secret = hiera('system/my-secret')
+
+notice($secret) # prints 'Notice: Scope(Class[main]): some-password'
+```
+
+### Hash Lookup
+
+```puppet
+# In environment 'production' with 'production/system/my-secret' set as pairs 'foo:bar' and 'baz:zap'
+$secret = hiera_hash('system/my-secret')
+
+notice($secret['foo']) # prints 'Notice: Scope(Class[main]): bar'
+notice($secret['baz']) # prints 'Notice: Scope(Class[main]): zap'
+
+notice($secret) # prints 'Notice: Scope(Class[main]): {"foo"=>"bar", "baz"=>"zap"}'
 ```
 
 ## Configuration
