@@ -71,6 +71,20 @@ notice($secret['baz']) # prints 'Notice: Scope(Class[main]): zap'
 notice($secret) # prints 'Notice: Scope(Class[main]): {"foo"=>"bar", "baz"=>"zap"}'
 ```
 
+### hieradata Lookup
+
+```yaml
+---
+# In an environment with fact init_env => test and confine_to_keys set, lookup secret test/my_hiera_secret-my-secret with key 'foo'
+mysecret: "%{hiera('my_hiera_secret-my-secret::foo')}"
+
+```
+
+```puppet
+$hieradata_secret = hiera('mysecret')
+notice($hieradata_secret)
+```
+
 ## Configuration
 
 Hiera Secrets Manager is configurable and the configuration has three required fields to operate: region, access_key_id, and secret_access_key.
@@ -84,12 +98,25 @@ An example hiera.yaml file implementing only hiera-secrets-manager is below:
     :region: eu-west-1
     :access_key_id: AWSACCESSKEY
     :secret_access_key: rAnd0MsTr!nG
-    :environments:
-        dev: development
-        uat: staging
-        prod: production
+    :env: "%{::init_env}" # facter lookup
+    :confine_to_keys:
+    - '^my_hiera_secret.*' 
 ```
 
+An example hiera.yaml file implementing IAM auth
+```yaml
+:backends:
+  - secrets_manager
+:secrets_manager:
+  :region: eu-west-1
+  :iam_client: true     # Use IAM Authentication
+  :environments:
+    dev: development
+    uat: staging
+    prod: production
+  :confine_to_keys:
+    - '^my_hiera_secret.*'
+```
 ### Region
 
 Mandatory field. Corresponds to AWS Region where your secrets are stored e.g. `eu-west-1`
@@ -97,14 +124,6 @@ Mandatory field. Corresponds to AWS Region where your secrets are stored e.g. `e
 ### Credentials
 
 Credentials for the AWS user are mandatory. The user must have permission to use `secretsmanager:GetSecretValue` on any relevant secrets in AWS Secrets Manager. This permission can be configured in AWS IAM.
-
-#### access_key_id
-
-Mandatory field. Corresponds to AWS's `Access key ID`.
-
-#### secret_access_key
-
-Mandatory field. Corresponds to AWS's `Secret access key`.
 
 ### Environments
 
@@ -122,6 +141,34 @@ Optional field. When used with Puppet, an environment will always be present. Th
 If there is no key set for an environment, or no environments configuration at all, the secret name that will be queried in AWS Secrets Manager will by default  be prefixed with the Puppet environment name:
 
 - A lookup for key `zap` in environment `test` will query AWS Secrets Manager for `test/zap`, because there's no entry for `test` in the environments configuration.
+
+# IAM Client
+
+Optional field. Use IAM instance credentials, must have permission to use `secretsmanager:GetSecretValue` on any relevant secrets in AWS Secrets Manager.
+
+```yaml
+  :iam_client: true
+```
+
+# Env
+
+Optional field. Lookups will be performed against a defined environment name instead of a puppet environment name
+e.g
+- A facter variable init_env set to `env1` 
+- hiera lookup to `my_hiera_secret-my-secret` will query for AWS Secrets Manager for `env1/my_hiera_secret-my-secret`
+
+```yaml
+  :env: "%{::init_env}"
+```
+
+# Confine keys
+
+Optional field. Limit AWS Secret Mananager lookups to secrets prefixed with confined_to_keys wildcards
+
+```yaml
+  :confine_to_keys:
+    - '^my_hiera_secret.*'
+```
 
 ## Contributing
 
